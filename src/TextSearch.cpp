@@ -7,6 +7,7 @@
 #include "BaseEngine.h"
 #include "TextSelection.h"
 #include "TextSearch.h"
+#include "TwoWayStringSearch.h"
 
 #define SkipWhitespace(c) for (; str::IsWs(*(c)); (c)++)
 // ignore spaces between CJK glyphs but not between Latin, Greek, Cyrillic, etc. letters
@@ -110,7 +111,11 @@ void TextSearch::SetLastResult(TextSelection *sel)
 
     findPage = std::min(startPage, endPage);
     findIndex = (findPage == startPage ? startGlyph : endGlyph) + (int)str::Len(findText);
+#ifdef _NEW_TEXT_SEARCH_28EE9332
+    pageText = textCache->GetData(findPage, &pageLen);
+#else
     pageText = textCache->GetData(findPage);
+#endif
     forward = true;
 }
 
@@ -177,16 +182,32 @@ bool TextSearch::FindTextInPage(int pageNo)
     if (!pageNo)
         pageNo = findPage;
     findPage = pageNo;
-
+#ifdef _NEW_TEXT_SEARCH_28EE9332
+    size_t needle_size = wcslen(anchor);
+#endif
     const WCHAR *found;
     int length;
     do {
         if (!anchor)
             found = GetNextIndex(pageText, findIndex, forward);
-        else if (forward)
+        else if (forward) {
+#ifndef _NEW_TEXT_SEARCH_28EE9332
             found = (caseSensitive ? StrStr : StrStrI)(pageText + findIndex, anchor);
-        else
+#else
+            if (caseSensitive || 1) {
+                found = wrapTwoWayStringSearch(pageText + findIndex, pageLen - findIndex,
+                    anchor, needle_size);
+            } else {
+                found = StrStrI(pageText + findIndex, anchor);
+            }
+#endif
+        } else {
+#ifndef _NEW_TEXT_SEARCH_28EE9332
             found = StrRStrI(pageText, pageText + findIndex, anchor);
+#else
+            found = StrRStrI(pageText, pageText + findIndex, anchor);
+#endif
+        }
         if (!found)
             return false;
         findIndex = (int)(found - pageText) + (forward ? 1 : 0);
@@ -224,6 +245,9 @@ bool TextSearch::FindStartingAtPage(int pageNo, ProgressUpdateUI *tracker)
         Reset();
 
         pageText = textCache->GetData(pageNo, &findIndex);
+#ifdef _NEW_TEXT_SEARCH_28EE9332
+        pageLen = findIndex;
+#endif
         if (pageText) {
             if (forward) {
                 findIndex = 0;

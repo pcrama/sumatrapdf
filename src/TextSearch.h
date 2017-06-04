@@ -1,6 +1,8 @@
 /* Copyright 2015 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
+#include "TwoWayStringSearch.h"
+
 enum TextSearchDirection {
     FIND_BACKWARD = false,
     FIND_FORWARD  = true
@@ -57,6 +59,9 @@ protected:
 
 private:
     const WCHAR *pageText = nullptr;
+#ifdef _NEW_TEXT_SEARCH_28EE9332
+    int pageLen = 0;
+#endif
     int findIndex = 0;
 
     WCHAR *lastText = nullptr;

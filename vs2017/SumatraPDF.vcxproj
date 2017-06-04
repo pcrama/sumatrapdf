@@ -336,6 +336,7 @@
     <ClCompile Include="..\src\SumatraStartup.cpp" />
     <ClCompile Include="..\src\Tests.cpp" />
     <ClCompile Include="..\src\TestTextSearch.cpp" />
+    <ClCompile Include="..\src\TwoWayStringSearch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\docs\releasenotes.txt" />
