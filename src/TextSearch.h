@@ -37,6 +37,7 @@ protected:
 
     WCHAR *findText = nullptr;
     WCHAR *anchor = nullptr;
+    size_t anchorLength = 0;
     int findPage = 0;
     bool forward = true;
     bool caseSensitive = false;

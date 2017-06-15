@@ -58,20 +58,23 @@ void TextSearch::SetText(const WCHAR *text)
     this->findText = str::Dup(text);
 
     // extract anchor string (the first word or the first symbol) for faster searching
+    anchorLength = 0;
     if (isnoncjkwordchar(*text)) {
         const WCHAR *end;
         for (end = text; isnoncjkwordchar(*end); end++)
             ;
-        anchor = str::DupN(text, end - text);
+        anchorLength = end - text;
+        anchor = str::DupN(text, anchorLength);
     }
     // Adobe Reader also matches certain hard-to-type Unicode
     // characters when searching for easy-to-type homoglyphs
     // cf. http://forums.fofou.org/sumatrapdf/topic?id=2432337
     else if (*text == '-' || *text == '\'' || *text == '"')
         anchor = nullptr;
-    else
-        anchor = str::DupN(text, 1);
-
+    else {
+        anchorLength = 1;
+        anchor = str::DupN(text, anchorLength);
+    }
     if (str::Len(this->findText) >= INT_MAX)
         this->findText[(unsigned)INT_MAX - 1] = '\0';
     if (str::EndsWith(this->findText, L" "))
@@ -118,7 +121,8 @@ void TextSearch::SetLastResult(TextSelection *sel)
 // (ignore all whitespace except after alphanumeric characters)
 TextSearch::PageAndOffset TextSearch::MatchEnd(const WCHAR *start) const
 {
-    const WCHAR *match = findText, *end = start;
+    const size_t alreadyChecked = (forward || !caseSensitive) ? anchorLength : 0;
+    const WCHAR *match = findText + alreadyChecked, *end = start + alreadyChecked;
     const PageAndOffset invalid = { -1, -1 };
     int currentPage = findPage;
     const WCHAR *currentPageText = pageText;
